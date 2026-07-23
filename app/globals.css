@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* raw "R G B" triplets so Tailwind can apply opacity modifiers via rgb(var(...) / <alpha-value>) */
+  --color-primary: 15 23 42;
+  --color-on-primary: 255 255 255;
+  --color-secondary: 51 65 85;
+  --color-accent: 3 105 161;
+  --color-accent-2: 77 124 255;
+  --color-background: 248 250 252;
+  --color-foreground: 2 6 23;
+  --color-muted: 232 236 241;
+  --color-border: 226 232 240;
+  --color-destructive: 220 38 38;
+  --color-ring: 15 23 42;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

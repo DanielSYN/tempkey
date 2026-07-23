@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime      @default(now())
+  integrations Integration[]
+  contractors  Contractor[]
+}
+
+enum Platform {
+  SLACK
+  GOOGLE
+  TRELLO
+  NOTION
+}
+
+model Integration {
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id])
+  platform       Platform
+  accessToken    String
+  refreshToken   String?
+  externalTeamId String?
+  meta           Json?
+  connectedAt    DateTime          @default(now())
+  grants         ContractorGrant[]
+
+  @@unique([userId, platform])
+}
+
+enum ContractorStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+model Contractor {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  name      String
+  email     String
+  startDate DateTime         @default(now())
+  endDate   DateTime
+  status    ContractorStatus @default(ACTIVE)
+  grants    ContractorGrant[]
+  createdAt DateTime         @default(now())
+}
+
+enum GrantScopeType {
+  SLACK_CHANNELS
+  GOOGLE_FILES
+  TRELLO_BOARD
+  NOTION_PAGES
+}
+
+// scopeRefs holds platform-specific identifiers, e.g.
+//   SLACK_CHANNELS -> { channelIds: string[] }
+//   GOOGLE_FILES    -> { fileIds: string[] }
+//   TRELLO_BOARD    -> { organizationId: string, memberId: string } (memberId is the
+//                       contractor's Trello member id within that Workspace -- Trello has
+//                       no lookup-by-email, so the owner picks the member in the UI)
+//   NOTION_PAGES    -> { pageIds: string[], pageTitles?: string[] }  (context only -- revocation
+//                       is manual, see manualOnly)
+model ContractorGrant {
+  id            String            @id @default(cuid())
+  contractorId  String
+  contractor    Contractor        @relation(fields: [contractorId], references: [id])
+  integrationId String
+  integration   Integration       @relation(fields: [integrationId], references: [id])
+  scopeType     GrantScopeType
+  scopeRefs     Json
+  revoked       Boolean           @default(false)
+  revokedAt     DateTime?
+  manualOnly    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  logs          RevocationLog[]
+}
+
+enum RevocationOutcome {
+  SUCCESS
+  FAILED
+  MANUAL_PENDING
+}
+
+model RevocationLog {
+  id        String            @id @default(cuid())
+  grantId   String
+  grant     ContractorGrant   @relation(fields: [grantId], references: [id])
+  outcome   RevocationOutcome
+  detail    String?
+  createdAt DateTime          @default(now())
+}
